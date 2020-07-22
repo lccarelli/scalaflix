@@ -26,6 +26,7 @@ class FilmService @Inject()(
   )(implicit ec: ExecutionContext)
     extends Logging {
 
+
   def getBy(genres: List[Genre])(implicit mapMarkerContext: MapMarkerContext): ApplicationResult[Seq[FilmDTO]] =
     filmRepository.listAvailable(genres)
 

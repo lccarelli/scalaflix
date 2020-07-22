@@ -17,7 +17,12 @@ trait ApplicationResultConverters extends Results with CirceImplicits {
   implicit private def circeWritable: play.api.http.Writeable[Json] =
     new play.api.http.Writeable[Json](json => ByteString(json.toString()), Some(MimeTypes.JSON))
 
-  private def handleApplicationError(error: ApplicationError): Result = ???
+  private def handleApplicationError(error: ApplicationError): Result =
+    error match {
+      case validationError: ValidationError => BadRequest(validationError.asJson)
+      case notFoundError: NotFoundError => NotFound(notFoundError.asJson)
+      case executionError: ExecutionError => InternalServerError(executionError.asJson)
+    }
 
   implicit class ApplicationResultOps[T](applicationResult: ApplicationResult[T]) {
 
@@ -30,7 +35,8 @@ trait ApplicationResultConverters extends Results with CirceImplicits {
     def toMediaResult(implicit ec: ExecutionContext): Future[Result] =
       applicationResult map (_.fold(handleApplicationError, {
         case stream: Source[ByteString, _] => Ok.chunked(stream)
-        case _                             => InternalServerError
+        case _ => InternalServerError
       }))
   }
+
 }
